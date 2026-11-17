@@ -1,0 +1,87 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-instrument-serif), ui-serif, Georgia, serif;
+
+  /* Profile theme, driven by inline CSS variables set per profile */
+  --color-p-bg: var(--p-bg);
+  --color-p-surface: var(--p-surface);
+  --color-p-text: var(--p-text);
+  --color-p-muted: var(--p-muted);
+  --color-p-border: var(--p-border);
+  --color-p-accent: var(--p-accent);
+  --color-p-accent-text: var(--p-accent-text);
+}
+
+@theme {
+  --color-ink-50: #f6f4ef;
+  --color-ink-100: #ebe8e1;
+  --color-ink-200: #d6d3cc;
+  --color-ink-300: #b4b2ab;
+  --color-ink-400: #8a8a92;
+  --color-ink-500: #5c5c63;
+  --color-ink-600: #3a3a40;
+  --color-ink-700: #26262a;
+  --color-ink-800: #1a1a1d;
+  --color-ink-900: #111113;
+  --color-ink-950: #0a0a0b;
+
+  --color-gold-100: #f5ecd6;
+  --color-gold-200: #ead9b0;
+  --color-gold-300: #d7bd84;
+  --color-gold-400: #c8a96a;
+  --color-gold-500: #a98a4d;
+  --color-gold-600: #806733;
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  font-family: var(--font-sans);
+}
+
+/* Brushed metal surface used by the card renders */
+.metal-black {
+  background:
+    repeating-linear-gradient(90deg, rgb(255 255 255 / 0.018) 0 1px, transparent 1px 3px),
+    linear-gradient(135deg, #2a2a2e 0%, #121214 45%, #1d1d20 70%, #0c0c0d 100%);
+}
+.metal-gold {
+  background:
+    repeating-linear-gradient(90deg, rgb(255 255 255 / 0.06) 0 1px, transparent 1px 3px),
+    linear-gradient(135deg, #f0dcae 0%, #c8a96a 40%, #e6cf9a 62%, #9c7d43 100%);
+}
+.metal-silver {
+  background:
+    repeating-linear-gradient(90deg, rgb(255 255 255 / 0.08) 0 1px, transparent 1px 3px),
+    linear-gradient(135deg, #f2f2f0 0%, #b9b9b7 42%, #e2e2df 64%, #8d8d8b 100%);
+}
+.metal-rose {
+  background:
+    repeating-linear-gradient(90deg, rgb(255 255 255 / 0.06) 0 1px, transparent 1px 3px),
+    linear-gradient(135deg, #f3d3c6 0%, #c98f7b 42%, #e8b9a8 64%, #9a5f4d 100%);
+}
+.metal-white {
+  background: linear-gradient(135deg, #fbfaf7 0%, #ecebe6 55%, #f7f6f2 100%);
+}
+.card-sheen {
+  background: linear-gradient(115deg, transparent 30%, rgb(255 255 255 / 0.14) 46%, transparent 60%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .float-slow {
+    animation: float 7s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0) rotate(var(--r, 0deg));
+    }
+    50% {
+      transform: translateY(-10px) rotate(var(--r, 0deg));
+    }
+  }
+}

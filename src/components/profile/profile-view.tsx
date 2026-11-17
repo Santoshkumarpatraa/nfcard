@@ -1,0 +1,148 @@
+import Link from "next/link";
+import { Icon, type IconName } from "@/components/icons";
+import { ProfileBlock } from "@/components/profile/blocks";
+import { ExchangeContact } from "@/components/profile/exchange-contact";
+import { ShareButton } from "@/components/profile/share-button";
+import type { PublicProfile } from "@/data/public-profile";
+import { imageSrcSet, imageUrl } from "@/lib/media";
+import { whatsappDigits } from "@/lib/phone";
+import { absoluteUrl, site } from "@/lib/site";
+import { resolveTheme, themeStyle } from "@/lib/themes";
+
+// Runs once on load from the cached HTML. Records a view and tracked clicks without any framework JS.
+const TRACK_SCRIPT = `(function(){var d=document.currentScript.dataset,p=d.p,c=d.c||undefined,q=new URLSearchParams(location.search),s=q.get("s")==="qr"?"qr":c?"nfc":"link";function send(t,x){var b=JSON.stringify({p:p,c:c,t:t,s:s,x:x});try{if(navigator.sendBeacon&&navigator.sendBeacon("/api/e",new Blob([b],{type:"application/json"})))return}catch(e){}fetch("/api/e",{method:"POST",body:b,keepalive:true,headers:{"content-type":"application/json"}}).catch(function(){})}send("view");document.addEventListener("click",function(e){var el=e.target.closest&&e.target.closest("[data-track]");if(el)send(el.getAttribute("data-track"),el.getAttribute("data-target")||el.getAttribute("href")||undefined)},true)})();`;
+
+function initials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
+}
+
+export function ProfileView({
+  profile,
+  cardId,
+  preview = false,
+}: {
+  profile: PublicProfile;
+  cardId?: string;
+  preview?: boolean;
+}) {
+  const theme = resolveTheme(profile.theme, profile.accent);
+  const profileUrl = absoluteUrl(`/${profile.username}`);
+  const whatsapp = profile.whatsapp ? whatsappDigits(profile.whatsapp) : null;
+  const firstName = profile.displayName.split(/\s+/)[0] ?? profile.displayName;
+
+  const quickActions: { icon: IconName; label: string; href: string; external?: boolean }[] = [];
+  if (profile.contactPhone) quickActions.push({ icon: "phone", label: "Call", href: `tel:${profile.contactPhone}` });
+  if (whatsapp) quickActions.push({ icon: "chat", label: "WhatsApp", href: `https://wa.me/${whatsapp}`, external: true });
+  if (profile.contactEmail) quickActions.push({ icon: "mail", label: "Email", href: `mailto:${profile.contactEmail}` });
+  if (profile.website) quickActions.push({ icon: "globe", label: "Website", href: profile.website, external: true });
+
+  const subtitle = [profile.headline, profile.company].filter(Boolean).join(" at ");
+
+  return (
+    <div style={themeStyle(theme)} className={`${preview ? "min-h-full" : "min-h-dvh"} bg-p-bg text-p-text antialiased`}>
+      <main className="mx-auto max-w-[480px] pb-12">
+        <div className="relative">
+          {profile.coverKey ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={imageUrl(profile.coverKey, 720)}
+              srcSet={imageSrcSet(profile.coverKey, "cover")}
+              sizes="(max-width: 480px) 100vw, 480px"
+              width={720}
+              height={240}
+              alt=""
+              fetchPriority="high"
+              className="aspect-[3/1] w-full object-cover"
+            />
+          ) : (
+            <div
+              className="aspect-[3/1] w-full"
+              style={{
+                background: `radial-gradient(120% 140% at 0% 0%, color-mix(in oklab, ${theme.accent} 35%, transparent), transparent 60%), linear-gradient(135deg, ${theme.surface}, ${theme.bg})`,
+              }}
+            />
+          )}
+          <div className="absolute -bottom-12 left-6">
+            {profile.avatarKey ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={imageUrl(profile.avatarKey, 192)}
+                srcSet={imageSrcSet(profile.avatarKey, "avatar")}
+                sizes="104px"
+                width={104}
+                height={104}
+                alt={profile.displayName}
+                fetchPriority="high"
+                className="size-26 rounded-full border-4 border-p-bg object-cover"
+              />
+            ) : (
+              <div className="flex size-26 items-center justify-center rounded-full border-4 border-p-bg bg-p-accent text-3xl font-semibold text-p-accent-text">
+                {initials(profile.displayName)}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="px-6 pt-16">
+          <h1 className="text-[28px] leading-tight font-semibold tracking-tight">{profile.displayName}</h1>
+          {subtitle ? <p className="mt-1 text-[15px] text-p-muted">{subtitle}</p> : null}
+
+          <div className="mt-6 flex gap-2.5">
+            <a
+              href={`/${profile.username}/vcard`}
+              data-track="save_contact"
+              className="flex flex-[1.3] items-center justify-center gap-2 rounded-2xl bg-p-accent px-4 py-4 text-[15px] font-semibold text-p-accent-text"
+            >
+              <Icon name="userPlus" size={18} /> Save contact
+            </a>
+            <ExchangeContact profileId={profile.id} cardId={cardId} ownerFirstName={firstName} />
+          </div>
+
+          {quickActions.length > 0 ? (
+            <div
+              className="mt-3 grid gap-2.5"
+              style={{ gridTemplateColumns: `repeat(${quickActions.length}, minmax(0, 1fr))` }}
+            >
+              {quickActions.map((action) => (
+                <a
+                  key={action.label}
+                  href={action.href}
+                  data-track="link_click"
+                  data-target={action.label.toLowerCase()}
+                  {...(action.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                  className="flex flex-col items-center gap-1.5 rounded-2xl border border-p-border bg-p-surface py-3.5 text-xs font-medium"
+                >
+                  <Icon name={action.icon} size={20} className="text-p-accent" />
+                  {action.label}
+                </a>
+              ))}
+            </div>
+          ) : null}
+
+          {profile.bio ? (
+            <p className="mt-7 text-[15px] leading-relaxed whitespace-pre-line text-p-text/90">{profile.bio}</p>
+          ) : null}
+
+          {profile.blocks.map((block, index) => (
+            <ProfileBlock key={block.id ?? index} block={block} whatsapp={whatsapp} />
+          ))}
+
+          <footer className="mt-12 flex flex-col items-center gap-5 border-t border-p-border pt-8">
+            <ShareButton url={profileUrl} title={profile.displayName} />
+            <Link href="/" prefetch={false} className="text-xs text-p-muted">
+              Get your own {site.name} card
+            </Link>
+          </footer>
+        </div>
+      </main>
+      {preview ? null : (
+        <script data-p={profile.id} data-c={cardId} dangerouslySetInnerHTML={{ __html: TRACK_SCRIPT }} />
+      )}
+    </div>
+  );
+}
