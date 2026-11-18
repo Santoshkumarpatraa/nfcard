@@ -37,7 +37,8 @@ export const env = {
     from: optional("EMAIL_FROM") ?? "NFCard <hello@example.com>",
   },
   storage: {
-    driver: oneOf("STORAGE_DRIVER", ["local", "s3"], "local"),
+    // Production defaults to the database driver so uploads work on read-only hosts before R2 is set up.
+    driver: oneOf("STORAGE_DRIVER", ["local", "s3", "db"], isProduction ? "db" : "local"),
     endpoint: optional("S3_ENDPOINT"),
     region: optional("S3_REGION") ?? "auto",
     bucket: optional("S3_BUCKET"),

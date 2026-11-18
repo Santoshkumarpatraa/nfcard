@@ -1,6 +1,7 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import sharp from "sharp";
+import { env } from "@/lib/env";
 import { IMAGE_SIZES, type ImageKind } from "@/lib/media";
 import { putObject } from "@/lib/storage";
 
@@ -55,7 +56,9 @@ export async function processImage(input: Buffer, kind: ImageKind): Promise<Proc
 }
 
 export async function storeDocument(input: Buffer, filename: string): Promise<string> {
-  if (input.byteLength > 10 * 1024 * 1024) throw new Error("Documents must be 10 MB or smaller");
+  // Database-stored files are served through a function, which caps responses at about 4 MB.
+  const maxMb = env.storage.driver === "db" ? 4 : 10;
+  if (input.byteLength > maxMb * 1024 * 1024) throw new Error(`Documents must be ${maxMb} MB or smaller`);
   if (input.subarray(0, 5).toString("latin1") !== "%PDF-") throw new Error("Only PDF files are allowed");
 
   const hash = createHash("sha256").update(input).digest("hex").slice(0, 20);

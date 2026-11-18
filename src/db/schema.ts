@@ -3,6 +3,7 @@ import {
   bigint,
   bigserial,
   boolean,
+  customType,
   index,
   integer,
   jsonb,
@@ -91,6 +92,20 @@ export const rateLimit = pgTable("rate_limit", {
   key: text().notNull().unique(),
   count: integer().notNull(),
   lastRequest: bigint({ mode: "number" }).notNull(),
+});
+
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({
+  dataType() {
+    return "bytea";
+  },
+});
+
+// Uploaded media for the "db" storage driver: lets uploads work on read-only hosts until object storage is configured.
+export const mediaObjects = pgTable("media_objects", {
+  key: text().primaryKey(),
+  contentType: text().notNull(),
+  body: bytea().notNull(),
+  createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 
 // Every OTP SMS sent, so sends can be capped per number and overall (SMS pumping protection).
