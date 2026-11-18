@@ -15,6 +15,13 @@
       "when": 1794941249325,
       "tag": "0001_sms_log",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795013953151,
+      "tag": "0002_media_objects",
+      "breakpoints": true
     }
   ]
 }

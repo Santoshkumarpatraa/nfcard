@@ -2,10 +2,19 @@ import "server-only";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { eq } from "drizzle-orm";
+import { db } from "@/db";
+import { mediaObjects } from "@/db/schema";
 import { env } from "@/lib/env";
 
 const LOCAL_ROOT = path.join(process.cwd(), ".uploads");
 const IMMUTABLE = "public, max-age=31536000, immutable";
+
+const CONTENT_TYPES: Record<string, string> = {
+  webp: "image/webp",
+  jpg: "image/jpeg",
+  pdf: "application/pdf",
+};
 
 let s3: S3Client | null = null;
 
@@ -21,7 +30,16 @@ export function localPath(key: string): string | null {
   return resolved.startsWith(LOCAL_ROOT + path.sep) ? resolved : null;
 }
 
+export function contentTypeFor(key: string): string {
+  return CONTENT_TYPES[key.split(".").pop() ?? ""] ?? "application/octet-stream";
+}
+
 export async function putObject(key: string, body: Buffer, contentType: string): Promise<void> {
+  if (env.storage.driver === "db") {
+    await db.insert(mediaObjects).values({ key, contentType, body }).onConflictDoNothing({ target: mediaObjects.key });
+    return;
+  }
+
   if (env.storage.driver === "local") {
     const target = localPath(key);
     if (!target) throw new Error("Invalid storage key");
@@ -44,6 +62,10 @@ export async function putObject(key: string, body: Buffer, contentType: string):
 
 export async function getObject(key: string): Promise<Buffer | null> {
   try {
+    if (env.storage.driver === "db") {
+      const [row] = await db.select({ body: mediaObjects.body }).from(mediaObjects).where(eq(mediaObjects.key, key)).limit(1);
+      return row?.body ?? null;
+    }
     if (env.storage.driver === "local") {
       const target = localPath(key);
       return target ? await readFile(target) : null;
