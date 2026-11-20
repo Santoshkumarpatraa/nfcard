@@ -2,15 +2,13 @@ import Link from "next/link";
 import { Icon, type IconName } from "@/components/icons";
 import { ProfileBlock } from "@/components/profile/blocks";
 import { ExchangeContact } from "@/components/profile/exchange-contact";
+import { ProfileTracker } from "@/components/profile/profile-tracker";
 import { ShareButton } from "@/components/profile/share-button";
 import type { PublicProfile } from "@/data/public-profile";
 import { imageSrcSet, imageUrl } from "@/lib/media";
 import { whatsappDigits } from "@/lib/phone";
 import { absoluteUrl, site } from "@/lib/site";
 import { resolveTheme, themeStyle } from "@/lib/themes";
-
-// Runs once on load from the cached HTML. Records a view and tracked clicks without any framework JS.
-const TRACK_SCRIPT = `(function(){var d=document.currentScript.dataset,p=d.p,c=d.c||undefined,q=new URLSearchParams(location.search),s=q.get("s")==="qr"?"qr":c?"nfc":"link";function send(t,x){var b=JSON.stringify({p:p,c:c,t:t,s:s,x:x});try{if(navigator.sendBeacon&&navigator.sendBeacon("/api/e",new Blob([b],{type:"application/json"})))return}catch(e){}fetch("/api/e",{method:"POST",body:b,keepalive:true,headers:{"content-type":"application/json"}}).catch(function(){})}send("view");document.addEventListener("click",function(e){var el=e.target.closest&&e.target.closest("[data-track]");if(el)send(el.getAttribute("data-track"),el.getAttribute("data-target")||el.getAttribute("href")||undefined)},true)})();`;
 
 function initials(name: string) {
   return name
@@ -192,7 +190,7 @@ export function ProfileView({
         ) : null}
       </div>
       {preview ? null : (
-        <script data-p={profile.id} data-c={cardId} dangerouslySetInnerHTML={{ __html: TRACK_SCRIPT }} />
+        <ProfileTracker profileId={profile.id} cardId={cardId} />
       )}
     </div>
   );
