@@ -13,6 +13,7 @@ const IMMUTABLE = "public, max-age=31536000, immutable";
 const CONTENT_TYPES: Record<string, string> = {
   webp: "image/webp",
   jpg: "image/jpeg",
+  png: "image/png",
   pdf: "application/pdf",
 };
 

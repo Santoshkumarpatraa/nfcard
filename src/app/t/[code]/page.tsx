@@ -6,6 +6,7 @@ import { ProfileView } from "@/components/profile/profile-view";
 import { getCardTarget } from "@/data/public-profile";
 import { isCardCode, normaliseCardCode } from "@/lib/card-code";
 import { imageUrl } from "@/lib/media";
+import { profileQrSvg } from "@/lib/profile-qr";
 import { absoluteUrl, site } from "@/lib/site";
 
 // This is the URL written to every NFC chip. Rendered statically per card, refreshed on change.
@@ -69,7 +70,7 @@ export default async function CardPage({ params }: PageProps<"/t/[code]">) {
   const { code, target } = loaded;
 
   if (target.status === "active" && target.profile) {
-    return <ProfileView profile={target.profile} cardId={target.cardId} />;
+    return <ProfileView profile={target.profile} cardId={target.cardId} qrSvg={await profileQrSvg(target.profile.username)} />;
   }
 
   if (target.status === "active") {

@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 import { changeUsername } from "@/app/dashboard/actions";
 import { Alert, Button, Field, Input } from "@/components/ui";
 import { authClient, authErrorMessage } from "@/lib/auth-client";
+import { runAction } from "@/lib/run-action";
 
 type Message = { ok: boolean; text: string } | null;
 
@@ -20,7 +21,7 @@ export function UsernameForm({ current }: { current: string }) {
         event.preventDefault();
         const value = String(new FormData(event.currentTarget).get("username") ?? "");
         startTransition(async () => {
-          const result = await changeUsername(value);
+          const result = await runAction(() => changeUsername(value));
           setMessage(result.ok ? { ok: true, text: result.message ?? "Saved" } : { ok: false, text: result.error });
           if (result.ok) router.refresh();
         });
@@ -28,7 +29,7 @@ export function UsernameForm({ current }: { current: string }) {
     >
       {message ? <Alert tone={message.ok ? "success" : "error"}>{message.text}</Alert> : null}
       <div className="flex gap-2">
-        <Input name="username" defaultValue={current} required autoCapitalize="none" spellCheck={false} />
+        <Input name="username" aria-label="Username" defaultValue={current} required autoCapitalize="none" spellCheck={false} />
         <Button type="submit" disabled={pending}>
           {pending ? "Saving..." : "Save"}
         </Button>

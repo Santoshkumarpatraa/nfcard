@@ -37,7 +37,7 @@ async function Activate({ params }: { params: Promise<{ code: string }> }) {
       <p className="mt-1 text-sm text-ink-500">
         Card code <span className="font-mono font-semibold text-ink-900">{code}</span>. After activation, a tap opens your profile.
       </p>
-      <ActivateCardForm defaultCode={code} />
+      <ActivateCardForm defaultCode={code} successHref="/dashboard/cards" />
       <Link href="/dashboard/cards" className="mt-6 block text-sm text-ink-500 hover:text-ink-900">
         Go to my cards
       </Link>

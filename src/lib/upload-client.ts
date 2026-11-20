@@ -1,4 +1,4 @@
-export type UploadKind = "avatar" | "cover" | "gallery" | "logo" | "document";
+export type UploadKind = "avatar" | "cover" | "gallery" | "logo" | "document" | "design";
 
 export type UploadedImage = { key: string; width: number; height: number };
 
@@ -16,7 +16,7 @@ async function post(file: File, kind: UploadKind): Promise<unknown> {
   return body;
 }
 
-export async function uploadImage(file: File, kind: Exclude<UploadKind, "document">): Promise<UploadedImage> {
+export async function uploadImage(file: File, kind: Exclude<UploadKind, "document" | "design">): Promise<UploadedImage> {
   const body = await post(file, kind);
   if (
     body &&
@@ -35,6 +35,12 @@ export async function uploadImage(file: File, kind: Exclude<UploadKind, "documen
 
 export async function uploadDocument(file: File): Promise<string> {
   const body = await post(file, "document");
+  if (body && typeof body === "object" && "key" in body && typeof body.key === "string") return body.key;
+  throw new Error("Upload failed");
+}
+
+export async function uploadDesign(file: File): Promise<string> {
+  const body = await post(file, "design");
   if (body && typeof body === "object" && "key" in body && typeof body.key === "string") return body.key;
   throw new Error("Upload failed");
 }

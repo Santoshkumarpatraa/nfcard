@@ -16,16 +16,17 @@ export function VerifyFlow() {
   const [skippedEmail, setSkippedEmail] = useState(false);
 
   useEffect(() => {
-    if (!isPending && !session) router.replace(`/login?next=${encodeURIComponent("/verify")}`);
-  }, [isPending, session, router]);
+    if (!isPending && !session) router.replace(`/login?next=${encodeURIComponent(`/verify?next=${encodeURIComponent(next)}`)}`);
+  }, [isPending, session, router, next]);
 
   const user = session?.user;
   const phoneDone = Boolean(user?.phoneNumberVerified);
   const emailDone = Boolean(user?.emailVerified) || skippedEmail;
 
   useEffect(() => {
-    if (user && phoneDone && emailDone) router.replace(next);
-  }, [user, phoneDone, emailDone, next, router]);
+    // Full page load, as after login: pages seen before verifying were redirects and must not come back from the router cache.
+    if (user && phoneDone && emailDone) window.location.assign(next);
+  }, [user, phoneDone, emailDone, next]);
 
   if (!user) return <p className="text-sm text-ink-500">Loading...</p>;
 

@@ -10,8 +10,21 @@ export function generateCardCode(): string {
   return code;
 }
 
+function safeDecode(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+/** Accepts a bare code or a pasted card link (with any ?s=qr suffix); malformed input simply fails isCardCode. */
 export function normaliseCardCode(input: string): string {
-  return decodeURIComponent(input).trim().toUpperCase();
+  return safeDecode(input)
+    .trim()
+    .replace(/^.*\/t\//i, "")
+    .replace(/[?#].*$/, "")
+    .toUpperCase();
 }
 
 export function isCardCode(code: string): boolean {

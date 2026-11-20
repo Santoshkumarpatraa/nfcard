@@ -14,6 +14,7 @@ const NAV = [
   { href: "/dashboard/leads", label: "Leads", icon: "users" },
   { href: "/dashboard/cards", label: "Cards", icon: "card" },
   { href: "/dashboard/orders", label: "Orders", icon: "bag" },
+  { href: "/dashboard/plan", label: "Plan", icon: "shield" },
   { href: "/dashboard/settings", label: "Settings", icon: "settings" },
 ] as const;
 
@@ -24,7 +25,7 @@ async function AccountBadge() {
     <div className="flex items-center justify-between gap-3 rounded-xl border border-ink-200 bg-white p-3">
       <div className="min-w-0">
         <p className="truncate text-sm font-medium">{session.user.name}</p>
-        <p className="truncate text-xs text-ink-500">@{session.user.username}</p>
+        <p className="truncate text-xs text-ink-500">{session.user.username ? `@${session.user.username}` : session.user.email}</p>
       </div>
       <SignOutButton />
     </div>

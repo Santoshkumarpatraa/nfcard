@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { asc, eq } from "drizzle-orm";
 import { Suspense } from "react";
 import { Card, PageHeader, Skeleton } from "@/components/ui";
@@ -5,6 +6,8 @@ import { db } from "@/db";
 import { productVariants, products } from "@/db/schema";
 import { requireAdmin } from "@/lib/session";
 import { VariantForm } from "./variant-form";
+
+export const metadata: Metadata = { title: "Admin products" };
 
 export default function AdminProductsPage() {
   return (

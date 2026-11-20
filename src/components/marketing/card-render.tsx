@@ -1,12 +1,14 @@
 import { Icon } from "@/components/icons";
 import { site } from "@/lib/site";
 
-export type Finish = "black" | "gold" | "silver" | "rose" | "white";
+export type Finish = "black" | "gold" | "silver" | "rose" | "white" | "matte";
 
-const FINISHES: Finish[] = ["black", "gold", "silver", "rose", "white"];
+const FINISHES: Finish[] = ["black", "gold", "silver", "rose", "white", "matte"];
 
-export function toFinish(value: string | undefined): Finish {
-  return FINISHES.find((finish) => finish === value) ?? "black";
+// PVC has no brushed metal look, so its black is drawn as flat matte; `product` is a slug or material name.
+export function toFinish(value: string | undefined, product = ""): Finish {
+  const finish = FINISHES.find((option) => option === value) ?? "black";
+  return finish === "black" && /pvc|classic/i.test(product) ? "matte" : finish;
 }
 
 const FINISH: Record<Finish, { surface: string; text: string; sub: string; ring: string }> = {
@@ -15,6 +17,7 @@ const FINISH: Record<Finish, { surface: string; text: string; sub: string; ring:
   silver: { surface: "metal-silver", text: "text-ink-950", sub: "text-ink-700", ring: "ring-black/10" },
   rose: { surface: "metal-rose", text: "text-ink-950", sub: "text-ink-800", ring: "ring-black/10" },
   white: { surface: "metal-white", text: "text-ink-950", sub: "text-ink-500", ring: "ring-black/10" },
+  matte: { surface: "metal-matte", text: "text-ink-50", sub: "text-ink-300", ring: "ring-white/10" },
 };
 
 /** A pure-CSS render of the physical card, so marketing pages ship no product photography weight. */

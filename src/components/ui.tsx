@@ -33,8 +33,11 @@ export function Button({
 export const inputClass =
   "w-full rounded-xl border border-ink-200 bg-white px-3.5 py-2.5 text-base text-ink-950 placeholder:text-ink-500 sm:text-[15px] focus:border-ink-950 focus:ring-2 focus:ring-ink-950/10 focus:outline-none disabled:bg-ink-50";
 
+// A caller-given width (w-24, w-64...) replaces the default full width instead of fighting it.
+const sizedInputClass = (className?: string) => (className && /(^|\s)w-/.test(className) ? inputClass.replace("w-full ", "") : inputClass);
+
 export function Input({ className, ...props }: InputHTMLAttributes<HTMLInputElement>) {
-  return <input {...props} className={cx(inputClass, className)} />;
+  return <input {...props} className={cx(sizedInputClass(className), className)} />;
 }
 
 export function Textarea({ className, ...props }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
@@ -58,14 +61,20 @@ export function Field({
   children: ReactNode;
   htmlFor?: string;
 }) {
+  // Without an id to point at, the whole field becomes the label so its single input is still named for screen readers.
+  const Wrapper = htmlFor ? "div" : "label";
   return (
-    <div className="flex flex-col gap-1.5">
-      <label htmlFor={htmlFor} className="text-sm font-medium text-ink-800">
-        {label}
-      </label>
+    <Wrapper className="flex flex-col gap-1.5">
+      {htmlFor ? (
+        <label htmlFor={htmlFor} className="text-sm font-medium text-ink-800">
+          {label}
+        </label>
+      ) : (
+        <span className="text-sm font-medium text-ink-800">{label}</span>
+      )}
       {children}
-      {error ? <p className="text-xs text-red-600">{error}</p> : hint ? <p className="text-xs text-ink-500">{hint}</p> : null}
-    </div>
+      {error ? <span className="text-xs text-red-600">{error}</span> : hint ? <span className="text-xs text-ink-500">{hint}</span> : null}
+    </Wrapper>
   );
 }
 

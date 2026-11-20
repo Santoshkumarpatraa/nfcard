@@ -1,8 +1,9 @@
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
-import { orders } from "@/db/schema";
+import { orders, renewals } from "@/db/schema";
 import { markOrderPaid } from "@/data/orders";
+import { markRenewalPaid } from "@/data/renewals";
 import { verifyWebhookSignature } from "@/lib/razorpay";
 
 const eventSchema = z.object({
@@ -35,8 +36,20 @@ export async function POST(request: Request) {
     .from(orders)
     .where(eq(orders.razorpayOrderId, razorpayOrderId))
     .limit(1);
-  if (!order) return new Response("Unknown order", { status: 200 });
+  const paymentId = payload.payment?.entity.id ?? null;
+  if (order) {
+    await markOrderPaid(order.id, paymentId);
+    return new Response("OK", { status: 200 });
+  }
 
-  await markOrderPaid(order.id, payload.payment?.entity.id ?? null);
+  // Premium renewals use their own Razorpay orders.
+  const [renewal] = await db
+    .select({ id: renewals.id })
+    .from(renewals)
+    .where(eq(renewals.razorpayOrderId, razorpayOrderId))
+    .limit(1);
+  if (!renewal) return new Response("Unknown order", { status: 200 });
+
+  await markRenewalPaid(renewal.id, paymentId);
   return new Response("OK", { status: 200 });
 }

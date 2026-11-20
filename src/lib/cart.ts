@@ -13,6 +13,9 @@ export type CartItem = {
   quantity: number;
   nameOnCard: string;
   titleOnCard?: string;
+  logoKey?: string;
+  logoName?: string;
+  notes?: string;
 };
 
 const KEY = "nfcard.cart.v1";

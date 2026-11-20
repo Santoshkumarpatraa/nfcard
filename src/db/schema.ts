@@ -141,6 +141,8 @@ export const profiles = pgTable("profiles", {
   theme: text().notNull().default("onyx"),
   accent: text(),
   isPublished: boolean().notNull().default(false),
+  premiumUntil: timestamp({ withTimezone: true }),
+  premiumNotice: text(),
   ...timestamps,
 });
 
@@ -315,6 +317,7 @@ export type CardCustomisation = {
   nameOnCard: string;
   titleOnCard?: string;
   notes?: string;
+  logoKey?: string;
 };
 
 export const orderItems = pgTable(
@@ -338,4 +341,34 @@ export const orderItems = pgTable(
     createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index().on(t.orderId)],
+);
+
+// Admin-managed values such as the Premium renewal price.
+export const appSettings = pgTable("app_settings", {
+  key: text().primaryKey(),
+  value: jsonb().notNull(),
+  updatedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+});
+
+export const renewalStatus = pgEnum("renewal_status", ["pending", "paid"]);
+
+export const renewals = pgTable(
+  "renewals",
+  {
+    id: uuid().primaryKey().defaultRandom(),
+    userId: text()
+      .notNull()
+      .references(() => user.id, { onDelete: "restrict" }),
+    profileId: uuid()
+      .notNull()
+      .references(() => profiles.id, { onDelete: "restrict" }),
+    months: integer().notNull(),
+    amountPaise: integer().notNull(),
+    status: renewalStatus().notNull().default("pending"),
+    razorpayOrderId: text().unique(),
+    razorpayPaymentId: text(),
+    paidAt: timestamp({ withTimezone: true }),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index().on(t.userId)],
 );

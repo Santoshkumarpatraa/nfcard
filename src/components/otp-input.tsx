@@ -13,6 +13,7 @@ export function OtpInput({ name = "code", autoFocus = true }: { name?: string; a
       pattern="\d{6}"
       maxLength={6}
       placeholder="6-digit code"
+      aria-label="6-digit code"
       autoFocus={autoFocus}
       className="text-center font-mono text-xl tracking-[0.5em]"
     />

@@ -1,18 +1,21 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { saveProfile } from "@/app/dashboard/actions";
 import { Icon } from "@/components/icons";
+import { IPhoneFrame } from "@/components/profile/iphone-frame";
 import { PhonePreview } from "@/components/profile/phone-preview";
 import { ProfileView } from "@/components/profile/profile-view";
 import { Alert, Button, Card, Field, Input, Select, Textarea, cx, inputClass } from "@/components/ui";
 import type { PublicProfile } from "@/data/public-profile";
-import { BLOCK_LABELS, BLOCK_TYPES, type BlockInput, type BlockType, SOCIAL_NETWORKS, networkFromUrl } from "@/lib/blocks";
+import { BLOCK_LABELS, BLOCK_TYPES, type BlockInput, type BlockType, SOCIAL_NETWORKS, networkFromUrl, pruneEmptyBlocks } from "@/lib/blocks";
 import { imageUrl } from "@/lib/media";
 import { formatPhone } from "@/lib/phone";
 import { THEMES, THEME_IDS } from "@/lib/themes";
 import { uploadDocument, uploadImage } from "@/lib/upload-client";
+import { runAction } from "@/lib/run-action";
 
 type ProfileState = {
   displayName: string;
@@ -70,6 +73,7 @@ export function ProfileEditor({
   username,
   isPublished,
   verifiedPhone,
+  premiumNotice,
   initialProfile,
   initialBlocks,
 }: {
@@ -77,6 +81,7 @@ export function ProfileEditor({
   username: string;
   isPublished: boolean;
   verifiedPhone: string | null;
+  premiumNotice: string | null;
   initialProfile: ProfileState;
   initialBlocks: BlockInput[];
 }) {
@@ -133,7 +138,7 @@ export function ProfileEditor({
 
   function save() {
     startTransition(async () => {
-      const response = await saveProfile(payload);
+      const response = await runAction(() => saveProfile({ ...payload, blocks: pruneEmptyBlocks(payload.blocks) }));
       if (response.ok) {
         setSaved(JSON.stringify(payload));
         setResult({ ok: true, text: response.message ?? "Saved" });
@@ -181,6 +186,17 @@ export function ProfileEditor({
           </Button>
         </div>
       </div>
+
+      {premiumNotice ? (
+        <div className="mb-6">
+          <Alert tone="info">
+            {premiumNotice}{" "}
+            <Link href="/dashboard/plan" className="font-medium underline">
+              Renew Premium
+            </Link>
+          </Alert>
+        </div>
+      ) : null}
 
       {result ? (
         <div className="mb-6">
@@ -343,11 +359,11 @@ export function ProfileEditor({
 
         <div className={cx("lg:block", showPreview ? "block" : "hidden")}>
           <div className="sticky top-24">
-            <div className="mx-auto h-[720px] w-full max-w-[380px] overflow-hidden rounded-[44px] border-[10px] border-ink-950 bg-ink-950 shadow-2xl">
-              <PhonePreview className="rounded-[34px]">
+            <IPhoneFrame className="h-[720px]">
+              <PhonePreview>
                 <ProfileView profile={previewProfile} preview />
               </PhonePreview>
-            </div>
+            </IPhoneFrame>
             <p className="mt-3 text-center text-xs text-ink-500">Live preview. Save to publish changes.</p>
           </div>
         </div>
@@ -571,8 +587,8 @@ function BlockFields({ block, onChange }: { block: BlockInput; onChange: (next: 
           onChange={(items) => onChange({ ...block, data: { items } })}
           render={(item, update) => (
             <div className="grid gap-2 sm:grid-cols-2">
-              <Input placeholder="Label" value={item.label} maxLength={60} onChange={(e) => update({ ...item, label: e.target.value })} />
-              <Input placeholder="https://" value={item.url} onChange={(e) => update({ ...item, url: e.target.value })} />
+              <Input placeholder="Label" aria-label="Link label" value={item.label} maxLength={60} onChange={(e) => update({ ...item, label: e.target.value })} />
+              <Input placeholder="https://" aria-label="Link address" value={item.url} onChange={(e) => update({ ...item, url: e.target.value })} />
             </div>
           )}
         />
@@ -589,6 +605,7 @@ function BlockFields({ block, onChange }: { block: BlockInput; onChange: (next: 
           render={(item, update) => (
             <div className="grid gap-2 sm:grid-cols-[160px_1fr]">
               <Select
+                aria-label="Network"
                 value={item.network}
                 onChange={(e) => {
                   const network = SOCIAL_NETWORKS.find((n) => n === e.target.value);
@@ -603,6 +620,7 @@ function BlockFields({ block, onChange }: { block: BlockInput; onChange: (next: 
               </Select>
               <Input
                 placeholder="Paste profile link"
+                aria-label="Profile link"
                 value={item.url}
                 onChange={(e) => update({ ...item, url: e.target.value, network: networkFromUrl(e.target.value) ?? item.network })}
               />
@@ -621,10 +639,11 @@ function BlockFields({ block, onChange }: { block: BlockInput; onChange: (next: 
           onChange={(items) => onChange({ ...block, data: { items } })}
           render={(item, update) => (
             <div className="grid gap-2 rounded-xl border border-ink-100 p-3 sm:grid-cols-[1fr_140px]">
-              <Input placeholder="Service name" value={item.name} maxLength={80} onChange={(e) => update({ ...item, name: e.target.value })} />
-              <Input placeholder="Price e.g. ₹2,999" value={item.price ?? ""} maxLength={40} onChange={(e) => update({ ...item, price: e.target.value })} />
+              <Input placeholder="Service name" aria-label="Service name" value={item.name} maxLength={80} onChange={(e) => update({ ...item, name: e.target.value })} />
+              <Input placeholder="Price e.g. ₹2,999" aria-label="Price" value={item.price ?? ""} maxLength={40} onChange={(e) => update({ ...item, price: e.target.value })} />
               <Textarea
                 placeholder="Short description (optional)"
+                aria-label="Description"
                 rows={2}
                 className="min-h-0 sm:col-span-2"
                 value={item.description ?? ""}
@@ -669,8 +688,8 @@ function BlockFields({ block, onChange }: { block: BlockInput; onChange: (next: 
             onChange={(items) => onChange({ ...block, data: { ...block.data, items } })}
             render={(item, update) => (
               <div className="grid gap-2 rounded-xl border border-ink-100 p-3 sm:grid-cols-[1fr_120px]">
-                <Input placeholder="Customer name" value={item.author} maxLength={60} onChange={(e) => update({ ...item, author: e.target.value })} />
-                <Select value={item.rating} onChange={(e) => update({ ...item, rating: Number(e.target.value) })}>
+                <Input placeholder="Customer name" aria-label="Customer name" value={item.author} maxLength={60} onChange={(e) => update({ ...item, author: e.target.value })} />
+                <Select aria-label="Rating" value={item.rating} onChange={(e) => update({ ...item, rating: Number(e.target.value) })}>
                   {[5, 4, 3, 2, 1].map((n) => (
                     <option key={n} value={n}>
                       {n} star{n > 1 ? "s" : ""}
@@ -679,6 +698,7 @@ function BlockFields({ block, onChange }: { block: BlockInput; onChange: (next: 
                 </Select>
                 <Textarea
                   placeholder="What they said"
+                  aria-label="Review text"
                   rows={2}
                   className="min-h-0 sm:col-span-2"
                   value={item.text}
@@ -720,7 +740,7 @@ function BlockFields({ block, onChange }: { block: BlockInput; onChange: (next: 
 
     case "text":
       return (
-        <Textarea rows={5} value={block.data.body} maxLength={1500} onChange={(e) => onChange({ ...block, data: { body: e.target.value } })} />
+        <Textarea rows={5} aria-label="About text" value={block.data.body} maxLength={1500} onChange={(e) => onChange({ ...block, data: { body: e.target.value } })} />
       );
   }
 }
@@ -743,7 +763,8 @@ function GalleryFields({
     const images = [...block.data.images];
     try {
       for (const file of Array.from(files).slice(0, 12 - images.length)) {
-        images.push(await uploadImage(file, "gallery"));
+        const image = await uploadImage(file, "gallery");
+        if (!images.some((existing) => existing.key === image.key)) images.push(image);
       }
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : "Upload failed");
@@ -806,6 +827,10 @@ function DocumentFields({
     setError(null);
     try {
       const key = await uploadDocument(file);
+      if (block.data.items.some((item) => item.key === key)) {
+        setError("This file is already added");
+        return;
+      }
       const label = file.name.replace(/\.pdf$/i, "").slice(0, 80) || "Document";
       onChange({ ...block, data: { items: [...block.data.items, { key, label }] } });
     } catch (uploadError) {
@@ -823,6 +848,7 @@ function DocumentFields({
           <Icon name="file" size={18} className="shrink-0 text-ink-400" />
           <input
             className={inputClass}
+            aria-label="Document name"
             value={item.label}
             maxLength={80}
             onChange={(e) =>

@@ -3,8 +3,7 @@ import { CartLink } from "@/components/marketing/cart-link";
 import { site } from "@/lib/site";
 
 const LINKS = [
-  { href: "/shop", label: "Shop" },
-  { href: "/#how-it-works", label: "How it works" },
+  { href: "/how-it-works", label: "How it works" },
   { href: "/business", label: "For teams" },
   { href: "/demo", label: "Live demo" },
 ];

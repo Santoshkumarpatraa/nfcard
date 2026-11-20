@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: "Contact" };
 
 export default function ContactPage() {
   const channels = [
-    { icon: "chat" as const, label: "WhatsApp", value: site.supportPhone, href: `https://wa.me/${site.supportWhatsapp}` },
+    { icon: "whatsapp" as const, label: "WhatsApp", value: site.supportPhone, href: `https://wa.me/${site.supportWhatsapp}` },
     { icon: "mail" as const, label: "Email", value: site.supportEmail, href: `mailto:${site.supportEmail}` },
     { icon: "pin" as const, label: "Office", value: site.address, href: undefined },
   ];
@@ -14,7 +14,7 @@ export default function ContactPage() {
   return (
     <div className="mx-auto max-w-3xl px-5 py-16 sm:px-8 lg:py-24">
       <p className="text-xs font-medium tracking-[0.22em] text-gold-300 uppercase">Contact</p>
-      <h1 className="mt-4 font-display text-6xl text-ink-50">We are here to help.</h1>
+      <h1 className="mt-4 font-display text-5xl text-ink-50 sm:text-6xl">We are here to help.</h1>
       <p className="mt-5 text-lg text-ink-300">Order questions, design help or team pricing. We reply within one working day.</p>
       <div className="mt-12 grid gap-4">
         {channels.map((channel) => {

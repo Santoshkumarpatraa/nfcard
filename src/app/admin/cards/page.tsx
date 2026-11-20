@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { count, desc, eq } from "drizzle-orm";
 import { Suspense } from "react";
 import { Badge, Card, PageHeader, Skeleton, buttonClass } from "@/components/ui";
@@ -5,6 +6,8 @@ import { db } from "@/db";
 import { cards, user } from "@/db/schema";
 import { requireAdmin } from "@/lib/session";
 import { GenerateCardsForm } from "./generate-form";
+
+export const metadata: Metadata = { title: "Admin cards" };
 
 export default function AdminCardsPage() {
   return (

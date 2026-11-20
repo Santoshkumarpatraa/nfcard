@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Icon } from "@/components/icons";
 import { Card, PageHeader, Skeleton, buttonClass } from "@/components/ui";
 import { ensureProfile, getLeads } from "@/data/owner";
 import { formatPhone } from "@/lib/phone";
 import { requireVerifiedUser } from "@/lib/session";
+
+export const metadata: Metadata = { title: "Leads" };
 
 export default function LeadsPage() {
   return (

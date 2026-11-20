@@ -4,8 +4,9 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { activateCard } from "@/app/dashboard/actions";
 import { Button, Input } from "@/components/ui";
+import { runAction } from "@/lib/run-action";
 
-export function ActivateCardForm({ defaultCode = "" }: { defaultCode?: string }) {
+export function ActivateCardForm({ defaultCode = "", successHref }: { defaultCode?: string; successHref?: string }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
@@ -17,9 +18,10 @@ export function ActivateCardForm({ defaultCode = "" }: { defaultCode?: string })
         event.preventDefault();
         const code = String(new FormData(event.currentTarget).get("code") ?? "");
         startTransition(async () => {
-          const result = await activateCard(code);
+          const result = await runAction(() => activateCard(code));
           setMessage(result.ok ? { ok: true, text: result.message ?? "Activated" } : { ok: false, text: result.error });
-          if (result.ok) router.refresh();
+          if (result.ok && successHref) router.push(successHref);
+          else if (result.ok) router.refresh();
         });
       }}
     >
@@ -29,6 +31,7 @@ export function ActivateCardForm({ defaultCode = "" }: { defaultCode?: string })
           required
           defaultValue={defaultCode}
           placeholder="e.g. K7MX2QRP"
+          aria-label="Card code"
           autoCapitalize="characters"
           className="font-mono tracking-wider uppercase"
         />

@@ -17,20 +17,18 @@ export function ProductConfigurator({ product }: { product: CatalogProduct }) {
   const cart = useCart();
   const [variantId, setVariantId] = useState(product.variants[0]?.id ?? "");
   const [nameOnCard, setNameOnCard] = useState("");
+  const isMetal = product.material.toLowerCase().includes("steel") || product.slug.includes("metal");
   const [titleOnCard, setTitleOnCard] = useState("");
   const [quantity, setQuantity] = useState(1);
-  const [error, setError] = useState<string | null>(null);
   const [added, setAdded] = useState(false);
 
   const variant = product.variants.find((v) => v.id === variantId) ?? product.variants[0];
   if (!variant) return null;
+  const canBuy = nameOnCard.trim().length >= 2;
 
   function addToCart(goToCart: boolean) {
     if (!variant) return;
-    if (!nameOnCard.trim()) {
-      setError("Add the name to engrave on the card");
-      return;
-    }
+    if (!canBuy) return;
     cart.add({
       variantId: variant.id,
       productSlug: product.slug,
@@ -42,7 +40,6 @@ export function ProductConfigurator({ product }: { product: CatalogProduct }) {
       nameOnCard: nameOnCard.trim(),
       titleOnCard: titleOnCard.trim() || undefined,
     });
-    setError(null);
     if (goToCart) router.push("/cart");
     else setAdded(true);
   }
@@ -51,7 +48,7 @@ export function ProductConfigurator({ product }: { product: CatalogProduct }) {
     <div className="mt-8 grid gap-12 lg:grid-cols-[1.1fr_1fr]">
       <div className="flex items-center justify-center rounded-3xl border border-white/5 bg-ink-900/60 p-10 sm:p-16">
         <CardRender
-          finish={toFinish(variant.finish)}
+          finish={toFinish(variant.finish, product.slug)}
           name={nameOnCard || "Your Name"}
           title={titleOnCard || "Your title"}
           className="w-full max-w-[460px] -rotate-3"
@@ -83,7 +80,7 @@ export function ProductConfigurator({ product }: { product: CatalogProduct }) {
                   option.id === variant.id ? "border-gold-300 text-ink-50" : "border-white/10 text-ink-300 hover:border-white/30"
                 }`}
               >
-                <span className={`size-4 rounded-full ring-1 ring-white/20 metal-${toFinish(option.finish)}`} />
+                <span className={`size-4 rounded-full ring-1 ring-white/20 metal-${toFinish(option.finish, product.slug)}`} />
                 {option.name}
               </button>
             ))}
@@ -92,13 +89,27 @@ export function ProductConfigurator({ product }: { product: CatalogProduct }) {
 
         <div className="mt-8 grid gap-4">
           <label className="grid gap-2">
-            <span className="text-sm font-medium text-ink-200">Name to engrave</span>
-            <input className={field} value={nameOnCard} maxLength={40} onChange={(e) => setNameOnCard(e.target.value)} placeholder="Aarav Mehta" />
+            <span className="text-sm font-medium text-ink-200">
+              {isMetal ? "Name to engrave" : "Name to print"} <span className="text-gold-300">*</span>
+            </span>
+            <input
+              className={field}
+              value={nameOnCard}
+              maxLength={40}
+              required
+              aria-required="true"
+              onChange={(e) => {
+                setNameOnCard(e.target.value);
+                setAdded(false);
+              }}
+              placeholder="Aarav Mehta"
+            />
           </label>
           <label className="grid gap-2">
             <span className="text-sm font-medium text-ink-200">Title or company (optional)</span>
             <input className={field} value={titleOnCard} maxLength={50} onChange={(e) => setTitleOnCard(e.target.value)} placeholder="Founder, Northwind" />
           </label>
+          <p className="text-xs text-ink-400">You can upload your logo and add design notes at checkout.</p>
           <div className="flex items-center gap-3">
             <span className="text-sm font-medium text-ink-200">Quantity</span>
             <div className="flex items-center rounded-full border border-white/10">
@@ -113,8 +124,7 @@ export function ProductConfigurator({ product }: { product: CatalogProduct }) {
           </div>
         </div>
 
-        {error ? <p className="mt-4 text-sm text-red-400">{error}</p> : null}
-        {added && !error ? (
+        {added ? (
           <p className="mt-4 text-sm text-gold-200">
             Added to cart.{" "}
             <Link href="/cart" className="underline">
@@ -124,24 +134,32 @@ export function ProductConfigurator({ product }: { product: CatalogProduct }) {
         ) : null}
 
         <div className="mt-8 flex flex-wrap gap-3">
-          <button
-            type="button"
-            onClick={() => addToCart(true)}
-            className="flex-1 rounded-full bg-gold-300 px-7 py-4 text-[15px] font-semibold text-ink-950 transition hover:bg-gold-200"
-          >
-            Buy now - {formatInr(variant.pricePaise * quantity)}
-          </button>
-          <button
-            type="button"
-            onClick={() => addToCart(false)}
-            className="rounded-full border border-white/15 px-7 py-4 text-[15px] font-medium text-ink-100 hover:border-white/40"
-          >
-            Add to cart
-          </button>
+          <div className={`group relative flex-1 ${canBuy ? "" : "cursor-not-allowed"}`}>
+            {!canBuy ? <DisabledHint /> : null}
+            <button
+              type="button"
+              onClick={() => addToCart(true)}
+              disabled={!canBuy}
+              className="w-full rounded-full bg-gold-300 px-7 py-4 text-[15px] font-semibold text-ink-950 transition hover:bg-gold-200 disabled:pointer-events-none disabled:opacity-40"
+            >
+              Buy now - {formatInr(variant.pricePaise * quantity)}
+            </button>
+          </div>
+          <div className={`group relative ${canBuy ? "" : "cursor-not-allowed"}`}>
+            {!canBuy ? <DisabledHint /> : null}
+            <button
+              type="button"
+              onClick={() => addToCart(false)}
+              disabled={!canBuy}
+              className="rounded-full border border-white/15 px-7 py-4 text-[15px] font-medium text-ink-100 hover:border-white/40 disabled:pointer-events-none disabled:opacity-40"
+            >
+              Add to cart
+            </button>
+          </div>
         </div>
 
         <ul className="mt-8 grid gap-2.5 text-sm text-ink-400">
-          {["Design proof before production", "Ships in 5 to 7 working days", "Profile, leads and analytics included"].map((line) => (
+          {["Design proof before production", "Ships in 5 to 7 working days", isMetal ? "Premium free for 12 months" : "Premium free for 6 months"].map((line) => (
             <li key={line} className="flex items-center gap-2">
               <Icon name="check" size={15} className="text-gold-300" /> {line}
             </li>
@@ -149,5 +167,17 @@ export function ProductConfigurator({ product }: { product: CatalogProduct }) {
         </ul>
       </div>
     </div>
+  );
+}
+
+// Disabled buttons ignore the pointer, so each button's wrapper shows this above it on hover, or on tap on phones.
+function DisabledHint() {
+  return (
+    <span
+      role="tooltip"
+      className="pointer-events-none absolute -top-10 left-1/2 z-10 hidden -translate-x-1/2 rounded-lg bg-ink-50 px-3 py-1.5 text-xs font-medium whitespace-nowrap text-ink-950 shadow-lg group-hover:block group-active:block"
+    >
+      Fill all details to continue
+    </span>
   );
 }

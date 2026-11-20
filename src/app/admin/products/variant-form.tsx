@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { updateVariant } from "@/app/admin/actions";
 import { Button, Input } from "@/components/ui";
+import { runAction } from "@/lib/run-action";
 
 export function VariantForm({
   variantId,
@@ -27,12 +28,14 @@ export function VariantForm({
         event.preventDefault();
         const form = new FormData(event.currentTarget);
         startTransition(async () => {
-          const result = await updateVariant({
-            variantId,
-            priceRupees: Number(form.get("price")),
-            compareAtRupees: Number(form.get("compareAt") || 0),
-            isActive: form.get("active") === "on",
-          });
+          const result = await runAction(() =>
+            updateVariant({
+              variantId,
+              priceRupees: Number(form.get("price")),
+              compareAtRupees: Number(form.get("compareAt") || 0),
+              isActive: form.get("active") === "on",
+            }),
+          );
           setMessage(result.ok ? (result.message ?? "Saved") : result.error);
         });
       }}

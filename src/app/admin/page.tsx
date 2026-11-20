@@ -1,12 +1,16 @@
+import type { Metadata } from "next";
 import { desc, eq, inArray } from "drizzle-orm";
 import { Suspense } from "react";
 import { Badge, Card, PageHeader, Skeleton } from "@/components/ui";
 import { db } from "@/db";
 import { orderItems, orders, user } from "@/db/schema";
+import { mediaUrl } from "@/lib/media";
 import { ORDER_STATUS_LABEL, formatInr } from "@/lib/money";
 import { formatPhone } from "@/lib/phone";
 import { requireAdmin } from "@/lib/session";
 import { OrderStatusForm } from "./order-status-form";
+
+export const metadata: Metadata = { title: "Admin orders" };
 
 export default function AdminOrdersPage() {
   return (
@@ -64,9 +68,19 @@ async function AdminOrders() {
                       <li key={item.id}>
                         {item.quantity} x {item.productName} ({item.variantName})
                         <span className="block text-xs text-ink-500">
-                          Engrave: {item.customisation.nameOnCard}
+                          Name: {item.customisation.nameOnCard}
                           {item.customisation.titleOnCard ? `, ${item.customisation.titleOnCard}` : ""}
                         </span>
+                        {item.customisation.logoKey ? (
+                          <a href={mediaUrl(item.customisation.logoKey)} download className="block text-xs font-medium text-ink-900 underline">
+                            Download logo
+                          </a>
+                        ) : (
+                          <span className="block text-xs text-ink-500">No logo</span>
+                        )}
+                        {item.customisation.notes ? (
+                          <span className="block text-xs text-ink-600">Notes: {item.customisation.notes}</span>
+                        ) : null}
                       </li>
                     ))}
                 </ul>

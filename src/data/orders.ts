@@ -3,9 +3,11 @@ import { and, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { cards, orderItems, orders, user } from "@/db/schema";
 import { ensureProfile } from "@/data/owner";
+import { grantPremiumAtLeast, refreshPublicProfile } from "@/data/premium";
 import { generateCardCode } from "@/lib/card-code";
 import { sendEmail } from "@/lib/email";
 import { formatInr } from "@/lib/money";
+import { premiumMonthsFor } from "@/lib/premium";
 import { absoluteUrl, site } from "@/lib/site";
 
 /** Marks a pending order paid exactly once (checkout callback, webhook or admin) and creates one card per unit linked to the buyer. */
@@ -36,7 +38,9 @@ export async function markOrderPaid(orderId: string, paymentId: string | null): 
         });
       }
     }
-    return { order, buyer };
+    const months = Math.max(0, ...items.map((item) => premiumMonthsFor(item.productName)));
+    if (months > 0) await grantPremiumAtLeast(profile.id, months, tx);
+    return { order, buyer, profileId: profile.id, months };
   });
 
   if (!transitioned) {
@@ -44,7 +48,8 @@ export async function markOrderPaid(orderId: string, paymentId: string | null): 
     return false;
   }
 
-  const { order, buyer } = transitioned;
+  const { order, buyer, profileId, months } = transitioned;
+  refreshPublicProfile(profileId);
   await sendEmail({
     to: buyer.email,
     subject: `Order #${order.number} confirmed`,
@@ -53,6 +58,7 @@ export async function markOrderPaid(orderId: string, paymentId: string | null): 
       "",
       `Order #${order.number} - ${formatInr(order.totalPaise)} paid.`,
       "We will share a design proof and then start production. Your card is already linked to your profile.",
+      `Premium (business sections, themes and analytics) is included free for ${months} months.`,
       "",
       `Track your order: ${absoluteUrl("/dashboard/orders")}`,
       "",

@@ -25,7 +25,7 @@ export function CartView() {
       <ul className="flex flex-col gap-4">
         {cart.items.map((item) => (
           <li key={item.id} className="flex gap-4 rounded-3xl border border-white/5 bg-ink-900/60 p-4 sm:gap-5 sm:p-5">
-            <CardRender finish={toFinish(item.finish)} name={item.nameOnCard} title={item.titleOnCard ?? ""} className="w-24 shrink-0 self-start sm:w-40" />
+            <CardRender finish={toFinish(item.finish, item.productSlug)} name={item.nameOnCard} title={item.titleOnCard ?? ""} className="w-24 shrink-0 self-start sm:w-40" />
             <div className="flex min-w-0 flex-1 flex-col">
               <div className="flex justify-between gap-3">
                 <div className="min-w-0">

@@ -15,35 +15,30 @@ const CATALOG = [
     slug: "metal-card",
     name: "Metal Card",
     material: "Stainless steel",
-    tagline: "Our signature. Laser-engraved, 0.8 mm stainless steel.",
+    tagline: "Matte black stainless steel, laser engraved with your name and logo.",
     description:
-      "Cut from stainless steel and laser engraved with your name and logo. Heavy in the hand and built to last for years.\n\nThe NFC chip sits behind a precision window so it reads reliably on every modern phone.",
+      "Cut from matte black stainless steel and laser engraved with your name, title and logo. Heavy in the hand and built to last for years.\n\nThe NFC chip sits behind a precision window so it reads reliably on every modern phone.",
     features: [
+      "Matte black stainless steel",
       "Laser-engraved name, title and logo",
       "Works with iPhone and Android, no app",
-      "QR code on the back for older phones",
       "Profile, leads and analytics included",
     ],
     position: 0,
-    variants: [
-      { name: "Matte Black", finish: "black", pricePaise: 249_900, compareAtPaise: 349_900 },
-      { name: "24K Gold", finish: "gold", pricePaise: 399_900, compareAtPaise: 499_900 },
-      { name: "Brushed Silver", finish: "silver", pricePaise: 249_900, compareAtPaise: 349_900 },
-      { name: "Rose Gold", finish: "rose", pricePaise: 349_900, compareAtPaise: 449_900 },
-    ],
+    variants: [{ name: "Matte Black", finish: "black", pricePaise: 249_900, compareAtPaise: 349_900 }],
   },
   {
     slug: "classic-card",
-    name: "Classic Card",
+    name: "PVC Card",
     material: "Premium PVC",
-    tagline: "Soft-touch matte finish with full colour printing.",
+    tagline: "Custom printed PVC card in white or black.",
     description:
-      "A lightweight card with a soft-touch matte finish and edge-to-edge print. The easy way to equip a whole team.",
-    features: ["Full colour print on both sides", "Soft-touch matte finish", "Works with iPhone and Android", "Ideal for teams and events"],
+      "A lightweight soft-touch PVC card printed in full colour with your name, title and logo. The easy way to equip a whole team.",
+    features: ["Your name, title and logo in full colour", "White or black card", "Works with iPhone and Android", "Ideal for teams and events"],
     position: 1,
     variants: [
-      { name: "Matte Black", finish: "black", pricePaise: 99_900, compareAtPaise: 149_900 },
-      { name: "Pearl White", finish: "white", pricePaise: 99_900, compareAtPaise: 149_900 },
+      { name: "White", finish: "white", pricePaise: 99_900, compareAtPaise: 149_900 },
+      { name: "Black", finish: "black", pricePaise: 99_900, compareAtPaise: 149_900 },
     ],
   },
 ];
@@ -58,18 +53,27 @@ async function seedCatalog() {
       .returning({ id: products.id });
     if (!row) throw new Error(`Could not upsert ${item.slug}`);
 
+    // Variants are matched by finish so renames keep their ids; finishes no longer offered are switched off, not deleted.
     const existing = await db.select().from(productVariants).where(eq(productVariants.productId, row.id));
     for (const [position, variant] of variants.entries()) {
-      const match = existing.find((v) => v.name === variant.name);
+      const match = existing.find((v) => v.finish === variant.finish);
       if (match) {
-        await db.update(productVariants).set({ ...variant, position }).where(eq(productVariants.id, match.id));
+        await db.update(productVariants).set({ ...variant, position, isActive: true }).where(eq(productVariants.id, match.id));
       } else {
         await db.insert(productVariants).values({ ...variant, position, productId: row.id });
       }
     }
+    const offered = variants.map((variant) => variant.finish);
+    for (const old of existing.filter((v) => !offered.includes(v.finish))) {
+      await db.update(productVariants).set({ isActive: false }).where(eq(productVariants.id, old.id));
+    }
   }
   console.info(`catalogue: ${CATALOG.length} products`);
 }
+
+// The public demo always shows the full Premium profile.
+const DEMO_PREMIUM_UNTIL = new Date("2099-12-31T00:00:00Z");
+const DEMO_PHONE = "+919000000000";
 
 async function seedDemo() {
   const demoId = "demo-user";
@@ -95,12 +99,18 @@ async function seedDemo() {
       company: "Northwind Studio",
       bio: "Brand and product design for ambitious Indian startups. This is a sample profile to show what a tap opens.",
       contactEmail: "hello@example.com",
+      contactPhone: DEMO_PHONE,
+      whatsapp: DEMO_PHONE,
       website: "https://example.com",
       address: "Indiranagar, Bengaluru",
       theme: "onyx",
       isPublished: true,
+      premiumUntil: DEMO_PREMIUM_UNTIL,
     })
-    .onConflictDoUpdate({ target: profiles.userId, set: { isPublished: true } })
+    .onConflictDoUpdate({
+      target: profiles.userId,
+      set: { isPublished: true, contactPhone: DEMO_PHONE, whatsapp: DEMO_PHONE, premiumUntil: DEMO_PREMIUM_UNTIL, premiumNotice: null },
+    })
     .returning({ id: profiles.id });
   if (!profile) throw new Error("Could not create demo profile");
 

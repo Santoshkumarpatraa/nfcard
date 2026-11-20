@@ -55,6 +55,24 @@ export async function processImage(input: Buffer, kind: ImageKind): Promise<Proc
   return { key, width: outWidth, height: outHeight };
 }
 
+// Customer logos are kept byte-for-byte for print quality; SVG is refused because it can carry scripts.
+const DESIGN_SIGNATURES: { ext: string; type: string; magic: number[] }[] = [
+  { ext: "png", type: "image/png", magic: [0x89, 0x50, 0x4e, 0x47] },
+  { ext: "jpg", type: "image/jpeg", magic: [0xff, 0xd8, 0xff] },
+  { ext: "pdf", type: "application/pdf", magic: [0x25, 0x50, 0x44, 0x46, 0x2d] },
+];
+
+export const DESIGN_KEY_PATTERN = /^design\/[0-9a-f]{20}\.(png|jpg|pdf)$/;
+
+export async function storeDesign(input: Buffer): Promise<string> {
+  if (input.byteLength > 4 * 1024 * 1024) throw new Error("Logo files must be 4 MB or smaller");
+  const match = DESIGN_SIGNATURES.find(({ magic }) => magic.every((byte, i) => input[i] === byte));
+  if (!match) throw new Error("Upload your logo as PNG, JPG or PDF");
+  const key = `design/${createHash("sha256").update(input).digest("hex").slice(0, 20)}.${match.ext}`;
+  await putObject(key, input, match.type);
+  return key;
+}
+
 export async function storeDocument(input: Buffer, filename: string): Promise<string> {
   // Database-stored files are served through a function, which caps responses at about 4 MB.
   const maxMb = env.storage.driver === "db" ? 4 : 10;

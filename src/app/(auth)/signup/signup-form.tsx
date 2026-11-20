@@ -9,12 +9,12 @@ import { useNextParam } from "@/lib/use-next-param";
 import { useOnPageRestore } from "@/lib/use-page-restore";
 import { normaliseUsername, usernameProblem } from "@/lib/username";
 
-type Availability = "idle" | "checking" | "available" | "taken";
+type Availability = "idle" | "checking" | "available" | "taken" | "unknown";
 
 export function SignupForm() {
   const next = useNextParam();
   const [username, setUsername] = useState("");
-  const [checked, setChecked] = useState<{ username: string; available: boolean } | null>(null);
+  const [checked, setChecked] = useState<{ username: string; available: boolean | null } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   useOnPageRestore(() => setPending(false));
@@ -27,15 +27,18 @@ export function SignupForm() {
       ? "idle"
       : checked?.username !== normalised
         ? "checking"
-        : checked.available
-          ? "available"
-          : "taken";
+        : checked.available === null
+          ? "unknown"
+          : checked.available
+            ? "available"
+            : "taken";
 
   useEffect(() => {
     if (!normalised || problem) return;
     const timer = setTimeout(async () => {
-      const result = await authClient.isUsernameAvailable({ username: normalised });
-      setChecked({ username: normalised, available: Boolean(result.data?.available) });
+      // A failed check (network, rate limit) is "unknown", not "taken"; sign-up itself still rejects a taken name.
+      const result = await authClient.isUsernameAvailable({ username: normalised }).catch(() => null);
+      setChecked({ username: normalised, available: result?.data ? Boolean(result.data.available) : null });
     }, 350);
     return () => clearTimeout(timer);
   }, [normalised, problem]);

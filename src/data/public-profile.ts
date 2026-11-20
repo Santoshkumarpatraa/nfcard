@@ -4,6 +4,7 @@ import { cacheLife, cacheTag } from "next/cache";
 import { db } from "@/db";
 import { cards, profileBlocks, profiles, user } from "@/db/schema";
 import { type BlockInput, parseStoredBlock } from "@/lib/blocks";
+import { isPremium } from "@/lib/premium";
 
 export type PublicProfile = {
   id: string;
@@ -39,11 +40,11 @@ async function loadProfile(profileId: string): Promise<PublicProfile | null> {
 
   if (!row || !row.username || !row.profile.isPublished) return null;
 
-  const blockRows = await db
-    .select()
-    .from(profileBlocks)
-    .where(eq(profileBlocks.profileId, profileId))
-    .orderBy(asc(profileBlocks.position));
+  // Without Premium the card still works as a basic contact card: sections and custom themes stay hidden, never deleted.
+  const premium = isPremium(row.profile.premiumUntil);
+  const blockRows = premium
+    ? await db.select().from(profileBlocks).where(eq(profileBlocks.profileId, profileId)).orderBy(asc(profileBlocks.position))
+    : [];
 
   const blocks = blockRows
     .filter((block) => block.isVisible)
@@ -65,8 +66,8 @@ async function loadProfile(profileId: string): Promise<PublicProfile | null> {
     address: p.address,
     avatarKey: p.avatarKey,
     coverKey: p.coverKey,
-    theme: p.theme,
-    accent: p.accent,
+    theme: premium ? p.theme : "onyx",
+    accent: premium ? p.accent : null,
     blocks,
   };
 }
