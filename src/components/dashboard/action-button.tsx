@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui";
 import type { ActionResult } from "@/app/dashboard/actions";
+import { runAction } from "@/lib/run-action";
 
 /** Runs a server action, shows its message, and refreshes server data on success. */
 export function ActionButton({
@@ -33,7 +34,7 @@ export function ActionButton({
         onClick={() => {
           if (confirm && !window.confirm(confirm)) return;
           startTransition(async () => {
-            const result = await action();
+            const result = await runAction(action);
             setMessage(result.ok ? (result.message ? { ok: true, text: result.message } : null) : { ok: false, text: result.error });
             if (result.ok) router.refresh();
           });

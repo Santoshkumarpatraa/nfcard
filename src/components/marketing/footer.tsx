@@ -33,8 +33,8 @@ const COLUMNS = [
 export function MarketingFooter() {
   return (
     <footer className="border-t border-white/5 bg-ink-950 text-ink-300">
-      <div className="mx-auto grid max-w-7xl gap-10 px-5 py-16 sm:px-8 md:grid-cols-[1.5fr_repeat(3,1fr)]">
-        <div>
+      <div className="mx-auto grid max-w-7xl grid-cols-3 gap-x-4 gap-y-10 px-5 py-12 sm:px-8 sm:py-16 md:grid-cols-[1.5fr_repeat(3,1fr)] md:gap-10">
+        <div className="col-span-3 md:col-span-1">
           <p className="font-display text-3xl text-ink-50">{site.name}</p>
           <p className="mt-3 max-w-xs text-sm leading-relaxed">{site.tagline}. Designed in India, shipped across India.</p>
         </div>

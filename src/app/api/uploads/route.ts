@@ -1,9 +1,9 @@
 import { z } from "zod";
 import { auth } from "@/lib/auth";
-import { processImage, storeDocument } from "@/lib/images";
+import { processImage, storeDesign, storeDocument } from "@/lib/images";
 import { BodyTooLargeError, readFormDataLimited } from "@/lib/request";
 
-const kindSchema = z.enum(["avatar", "cover", "gallery", "logo", "document"]);
+const kindSchema = z.enum(["avatar", "cover", "gallery", "logo", "document", "design"]);
 const MAX_BODY_BYTES = 11 * 1024 * 1024;
 
 export async function POST(request: Request) {
@@ -29,6 +29,10 @@ export async function POST(request: Request) {
 
   const buffer = Buffer.from(await file.arrayBuffer());
   try {
+    if (kind.data === "design") {
+      const key = await storeDesign(buffer);
+      return Response.json({ key });
+    }
     if (kind.data === "document") {
       const key = await storeDocument(buffer, file.name);
       return Response.json({ key });

@@ -10,6 +10,7 @@ const DOCS: Record<string, { title: string; sections: { heading: string; body: s
       { heading: "Using the service", body: `By creating an account or buying a card from ${site.name} you agree to these terms. You must provide accurate details and keep your password private.` },
       { heading: "Your profile content", body: "You own the content you publish on your profile and are responsible for it. Do not publish anything unlawful, misleading or that infringes someone else's rights. We may remove content that breaks these rules." },
       { heading: "Cards", body: "Cards are personalised and made to order. The card links to your profile for as long as your account is active. You can disable a card at any time from your dashboard." },
+      { heading: "Premium", body: "Each card includes free Premium (business sections, themes and analytics): 12 months with a metal card and 6 months with a PVC card. After that, Premium renews yearly at the price shown in your dashboard. If you do not renew, your card and basic profile keep working and your Premium content is kept, hidden, until you renew. Renewals are not refundable once the new period starts." },
       { heading: "Liability", body: "The service is provided as is. To the extent allowed by law, our liability is limited to the amount you paid for the card." },
       { heading: "Contact", body: `Questions about these terms: ${site.supportEmail}.` },
     ],

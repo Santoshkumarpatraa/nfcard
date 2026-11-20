@@ -191,3 +191,45 @@ export function youtubeId(input: string): string | null {
   }
   return null;
 }
+
+const blank = (value: string | undefined) => !value?.trim();
+
+export function isBlockType(value: string): value is BlockType {
+  return value in blockDataSchemas;
+}
+
+/** Drops rows left empty and sections with nothing in them, so a half-added section never blocks saving. */
+export function pruneEmptyBlocks(blocks: BlockInput[]): BlockInput[] {
+  return blocks.flatMap((block): BlockInput[] => {
+    switch (block.type) {
+      case "links": {
+        const items = block.data.items.filter((item) => !(blank(item.label) && blank(item.url)));
+        return items.length ? [{ ...block, data: { items } }] : [];
+      }
+      case "social": {
+        const items = block.data.items.filter((item) => !blank(item.url));
+        return items.length ? [{ ...block, data: { items } }] : [];
+      }
+      case "services": {
+        const items = block.data.items.filter((item) => !(blank(item.name) && blank(item.price) && blank(item.description)));
+        return items.length ? [{ ...block, data: { items } }] : [];
+      }
+      case "reviews": {
+        const items = block.data.items.filter((item) => !(blank(item.author) && blank(item.text)));
+        return items.length || !blank(block.data.googleReviewUrl) ? [{ ...block, data: { ...block.data, items } }] : [];
+      }
+      case "gallery":
+        return block.data.images.length ? [block] : [];
+      case "document":
+        return block.data.items.length ? [block] : [];
+      case "video":
+        return blank(block.data.url) ? [] : [block];
+      case "location":
+        return blank(block.data.address) ? [] : [block];
+      case "upi":
+        return blank(block.data.vpa) ? [] : [block];
+      case "text":
+        return blank(block.data.body) ? [] : [block];
+    }
+  });
+}

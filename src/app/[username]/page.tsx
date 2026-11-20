@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ProfileView } from "@/components/profile/profile-view";
 import { getPublicProfileByUsername } from "@/data/public-profile";
 import { imageUrl } from "@/lib/media";
+import { profileQrSvg } from "@/lib/profile-qr";
 import { absoluteUrl } from "@/lib/site";
 import { normaliseUsername, usernameProblem } from "@/lib/username";
 
@@ -50,5 +51,5 @@ export async function generateMetadata({ params }: PageProps<"/[username]">): Pr
 export default async function ProfilePage({ params }: PageProps<"/[username]">) {
   const profile = await loadProfile(params);
   if (!profile) notFound();
-  return <ProfileView profile={profile} />;
+  return <ProfileView profile={profile} qrSvg={await profileQrSvg(profile.username)} />;
 }

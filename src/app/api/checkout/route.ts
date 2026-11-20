@@ -6,6 +6,7 @@ import { markOrderPaid } from "@/data/orders";
 import { getVariantsForCheckout } from "@/data/products";
 import { auth } from "@/lib/auth";
 import { env } from "@/lib/env";
+import { DESIGN_KEY_PATTERN } from "@/lib/images";
 import { toE164 } from "@/lib/phone";
 import { createRazorpayOrder, razorpayConfigured } from "@/lib/razorpay";
 import { site } from "@/lib/site";
@@ -19,6 +20,7 @@ const checkoutSchema = z.object({
         nameOnCard: z.string().trim().min(1, "Add the name to print on each card").max(40),
         titleOnCard: z.string().trim().max(50).optional(),
         notes: z.string().trim().max(300).optional(),
+        logoKey: z.string().regex(DESIGN_KEY_PATTERN, "Re-upload your logo").optional(),
       }),
     )
     .min(1, "Your cart is empty")
@@ -97,7 +99,7 @@ export async function POST(request: Request) {
         variantName: line.variant.name,
         unitPricePaise: line.variant.pricePaise,
         quantity: line.quantity,
-        customisation: { nameOnCard: line.nameOnCard, titleOnCard: line.titleOnCard, notes: line.notes },
+        customisation: { nameOnCard: line.nameOnCard, titleOnCard: line.titleOnCard, notes: line.notes, logoKey: line.logoKey },
       })),
     );
     return created;

@@ -2,7 +2,7 @@
 
 @theme inline {
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-instrument-serif), ui-serif, Georgia, serif;
+  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
 
   /* Profile theme, driven by inline CSS variables set per profile */
   --color-p-bg: var(--p-bg);
@@ -63,6 +63,9 @@ body {
   background:
     repeating-linear-gradient(90deg, rgb(255 255 255 / 0.06) 0 1px, transparent 1px 3px),
     linear-gradient(135deg, #f3d3c6 0%, #c98f7b 42%, #e8b9a8 64%, #9a5f4d 100%);
+}
+.metal-matte {
+  background: linear-gradient(135deg, #1f1f22 0%, #141416 100%);
 }
 .metal-white {
   background: linear-gradient(135deg, #fbfaf7 0%, #ecebe6 55%, #f7f6f2 100%);

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { generateCards } from "@/app/admin/actions";
 import { Button, Input } from "@/components/ui";
+import { runAction } from "@/lib/run-action";
 
 export function GenerateCardsForm() {
   const router = useRouter();
@@ -17,7 +18,7 @@ export function GenerateCardsForm() {
         event.preventDefault();
         const form = new FormData(event.currentTarget);
         startTransition(async () => {
-          const result = await generateCards(Number(form.get("count")), String(form.get("label") ?? ""));
+          const result = await runAction(() => generateCards(Number(form.get("count")), String(form.get("label") ?? "")));
           setMessage(result.ok ? (result.message ?? "Done") : result.error);
           if (result.ok) router.refresh();
         });

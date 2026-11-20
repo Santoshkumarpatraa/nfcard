@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { SignOutButton } from "@/components/dashboard/sign-out-button";
@@ -5,6 +6,8 @@ import { Badge, Card, PageHeader, Skeleton, buttonClass } from "@/components/ui"
 import { formatPhone } from "@/lib/phone";
 import { requireVerifiedUser } from "@/lib/session";
 import { PasswordForm, UsernameForm } from "./forms";
+
+export const metadata: Metadata = { title: "Settings" };
 
 export default function SettingsPage() {
   return (

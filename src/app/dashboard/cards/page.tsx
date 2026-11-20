@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import QRCode from "qrcode";
 import { Suspense } from "react";
@@ -8,6 +9,8 @@ import { getUserCards } from "@/data/owner";
 import { requireVerifiedUser } from "@/lib/session";
 import { absoluteUrl } from "@/lib/site";
 import { ActivateCardForm } from "./activate-form";
+
+export const metadata: Metadata = { title: "Cards" };
 
 export default function CardsPage() {
   return (

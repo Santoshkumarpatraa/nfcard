@@ -45,6 +45,7 @@ export const env = {
     accessKeyId: optional("S3_ACCESS_KEY_ID"),
     secretAccessKey: optional("S3_SECRET_ACCESS_KEY"),
   },
+  cronSecret: optional("CRON_SECRET"),
   razorpay: {
     keyId: optional("RAZORPAY_KEY_ID"),
     keySecret: optional("RAZORPAY_KEY_SECRET"),

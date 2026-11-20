@@ -8,10 +8,12 @@ import { db } from "@/db";
 import { cards, profileBlocks, profiles, user } from "@/db/schema";
 import { cardTag, profileTag, usernameTag } from "@/data/public-profile";
 import { ensureProfile } from "@/data/owner";
+import { grantPremiumAtLeast } from "@/data/premium";
 import { auth } from "@/lib/auth";
-import { blockInputSchema } from "@/lib/blocks";
+import { BLOCK_LABELS, blockInputSchema, isBlockType } from "@/lib/blocks";
 import { isCardCode, normaliseCardCode } from "@/lib/card-code";
 import { toE164 } from "@/lib/phone";
+import { premiumMonthsFor } from "@/lib/premium";
 import { isThemeId } from "@/lib/themes";
 import { normaliseUsername, usernameProblem } from "@/lib/username";
 
@@ -100,12 +102,36 @@ const FIELD_LABELS: Record<string, string> = {
   accent: "Accent colour",
 };
 
-function describeIssue(issue: z.core.$ZodIssue | undefined): string {
+const BLOCK_FIELD_LABELS: Record<string, string> = {
+  url: "link",
+  label: "label",
+  name: "name",
+  address: "address",
+  vpa: "UPI ID",
+  payeeName: "payee name",
+  body: "text",
+  author: "reviewer name",
+  text: "review",
+};
+
+function blockTypeAt(input: unknown, index: number): string | null {
+  if (typeof input !== "object" || input === null || !("blocks" in input) || !Array.isArray(input.blocks)) return null;
+  const block: unknown = input.blocks[index];
+  return typeof block === "object" && block !== null && "type" in block && typeof block.type === "string" ? block.type : null;
+}
+
+function describeIssue(issue: z.core.$ZodIssue | undefined, input: unknown): string {
   if (!issue) return "Some details are invalid";
   const [scope, index, ...rest] = issue.path;
   if (scope === "blocks" && typeof index === "number") {
-    const field = rest.filter((part) => typeof part === "string" && part !== "data").join(" ");
-    return `Section ${index + 1}${field ? ` (${field})` : ""}: ${issue.message}`;
+    const type = blockTypeAt(input, index);
+    const section = type && isBlockType(type) ? BLOCK_LABELS[type] : `Section ${index + 1}`;
+    const key = rest.filter((part) => typeof part === "string").pop();
+    const field = typeof key === "string" ? (BLOCK_FIELD_LABELS[key] ?? key) : "a field";
+    if (issue.code === "too_small") return `${section}: fill in the ${field} or remove that row`;
+    if (key === "url") return `${section}: the ${field} must be a full web address, like https://example.com`;
+    if (issue.code === "too_big") return `${section}: the ${field} is too long`;
+    return `${section}: ${issue.message}`;
   }
   if (scope === "profile" && typeof index === "string") {
     return `${FIELD_LABELS[index] ?? index}: ${issue.message}`;
@@ -118,7 +144,7 @@ export async function saveProfile(input: unknown): Promise<ActionResult> {
   if (!session) return { ok: false, error: "Please sign in again" };
 
   const parsed = saveSchema.safeParse(input);
-  if (!parsed.success) return { ok: false, error: describeIssue(parsed.error.issues[0]) };
+  if (!parsed.success) return { ok: false, error: describeIssue(parsed.error.issues[0], input) };
 
   const profile = await ensureProfile(session.user.id, session.user.name);
   const { profile: values, blocks } = parsed.data;
@@ -187,7 +213,7 @@ export async function activateCard(rawCode: string): Promise<ActionResult> {
   const session = await verifiedSession();
   if (!session) return { ok: false, error: "Verify your phone number first" };
 
-  const code = normaliseCardCode(rawCode.replace(/^.*\/t\//, ""));
+  const code = normaliseCardCode(rawCode);
   if (!isCardCode(code)) return { ok: false, error: "That does not look like a card code" };
 
   const [card] = await db.select().from(cards).where(eq(cards.code, code)).limit(1);
@@ -203,7 +229,9 @@ export async function activateCard(rawCode: string): Promise<ActionResult> {
     .returning({ id: cards.id });
   if (!updated.length) return { ok: false, error: "This card was just activated by someone else" };
 
+  await grantPremiumAtLeast(profile.id, premiumMonthsFor(card.label ?? ""));
   updateTag(cardTag(code));
+  updateTag(profileTag(profile.id));
   return { ok: true, message: "Card activated. A tap now opens your profile." };
 }
 

@@ -60,7 +60,7 @@ export function ExchangeContact({
           dialogRef.current?.showModal();
           nameRef.current?.focus();
         }}
-        className="flex flex-1 items-center justify-center gap-2 rounded-2xl border border-p-border bg-p-surface px-4 py-4 text-[15px] font-semibold"
+        className="flex min-w-0 flex-1 items-center justify-center gap-2 rounded-2xl border border-p-border bg-p-surface px-3 py-3.5 text-[15px] font-semibold whitespace-nowrap"
       >
         <Icon name="exchange" size={18} /> Share yours
       </button>

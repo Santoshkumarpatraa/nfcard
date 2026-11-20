@@ -8,7 +8,8 @@ export const metadata: Metadata = { title: "Admin", robots: { index: false } };
 const NAV = [
   { href: "/admin", label: "Orders", icon: "bag" },
   { href: "/admin/cards", label: "Cards", icon: "card" },
-  { href: "/admin/products", label: "Products", icon: "settings" },
+  { href: "/admin/products", label: "Products", icon: "card" },
+  { href: "/admin/settings", label: "Settings", icon: "settings" },
   { href: "/dashboard", label: "My dashboard", icon: "user" },
 ] as const;
 

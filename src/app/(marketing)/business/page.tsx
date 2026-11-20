@@ -23,7 +23,7 @@ export default function BusinessPage() {
       <div className="grid items-center gap-14 lg:grid-cols-2">
         <div>
           <p className="text-xs font-medium tracking-[0.22em] text-gold-300 uppercase">For teams</p>
-          <h1 className="mt-4 font-display text-6xl leading-[1.02] text-ink-50">Equip your whole team.</h1>
+          <h1 className="mt-4 font-display text-5xl leading-[1.02] text-ink-50 sm:text-6xl">Equip your whole team.</h1>
           <p className="mt-6 max-w-lg text-lg leading-relaxed text-ink-300">
             Sales, leadership and events teams make a stronger first impression with cards that capture every lead.
           </p>
@@ -34,7 +34,7 @@ export default function BusinessPage() {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-full bg-gold-300 px-7 py-3.5 text-[15px] font-semibold text-ink-950"
             >
-              <Icon name="chat" size={18} /> Talk on WhatsApp
+              <Icon name="whatsapp" size={18} /> Talk on WhatsApp
             </a>
             <a
               href={`mailto:${site.supportEmail}?subject=Team%20cards`}
@@ -44,12 +44,16 @@ export default function BusinessPage() {
             </a>
           </div>
         </div>
-        <div className="relative h-80">
-          <CardRender finish="silver" name="Riya Kapoor" title="Head of Sales" className="absolute top-0 left-6 w-[70%] rotate-[-8deg]" />
-          <CardRender finish="black" name="Kabir Shah" title="Account Executive" className="absolute right-0 bottom-0 w-[70%] rotate-[5deg]" />
+        <div className="relative mx-auto aspect-[6/5] w-full max-w-[520px]">
+          <div className="absolute right-2 bottom-8 w-[70%] rotate-[5deg]">
+            <CardRender finish="black" name="Kabir Shah" title="Account Executive" />
+          </div>
+          <div className="absolute top-8 left-2 w-[70%] rotate-[-8deg]">
+            <CardRender finish="white" name="Riya Kapoor" title="Head of Sales" />
+          </div>
         </div>
       </div>
-      <div className="mt-24 grid gap-px overflow-hidden rounded-3xl border border-white/5 bg-white/5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-16 grid gap-px sm:mt-24 overflow-hidden rounded-3xl border border-white/5 bg-white/5 sm:grid-cols-2 lg:grid-cols-4">
         {POINTS.map((point) => (
           <div key={point.title} className="bg-ink-950 p-8">
             <Icon name={point.icon} size={22} className="text-gold-300" />

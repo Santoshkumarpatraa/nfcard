@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import QRCode from "qrcode";
 import { Suspense } from "react";
@@ -7,7 +8,10 @@ import { Icon } from "@/components/icons";
 import { Badge, Card, PageHeader, Skeleton, buttonClass } from "@/components/ui";
 import { ensureProfile, getProfileStats, getUserCards } from "@/data/owner";
 import { requireVerifiedUser } from "@/lib/session";
+import { daysUntil, formatPlanDate, isPremium } from "@/lib/premium";
 import { absoluteUrl } from "@/lib/site";
+
+export const metadata: Metadata = { title: "Overview" };
 
 export default function OverviewPage() {
   return (
@@ -43,6 +47,8 @@ async function Overview() {
   const session = await requireVerifiedUser("/dashboard");
   const profile = await ensureProfile(session.user.id, session.user.name);
   const [stats, cards] = await Promise.all([getProfileStats(profile.id), getUserCards(session.user.id)]);
+  const premium = isPremium(profile.premiumUntil);
+  const daysLeft = daysUntil(profile.premiumUntil);
 
   if (!session.user.username) {
     return (
@@ -112,14 +118,33 @@ async function Overview() {
         </ActionButton>
       </Card>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Stat label="Profile views" value={stats.totals.view} hint={`${stats.sources.nfc} from card taps`} />
-        <Stat label="Contacts saved" value={stats.totals.save_contact} />
-        <Stat label="Leads received" value={stats.totals.lead} />
-        <Stat label="Link clicks" value={stats.totals.link_click} />
-      </div>
+      <Card className="mb-6 flex flex-wrap items-center justify-between gap-4 p-5">
+        <div className="flex items-center gap-3">
+          <Badge tone={premium ? "green" : "amber"}>{premium ? "Premium" : "Basic"}</Badge>
+          <p className="text-sm text-ink-600">
+            {premium && profile.premiumUntil
+              ? daysLeft <= 30
+                ? `Premium ends in ${daysLeft} day${daysLeft === 1 ? "" : "s"}, on ${formatPlanDate(profile.premiumUntil)}.`
+                : `Premium active until ${formatPlanDate(profile.premiumUntil)}.`
+              : "Business sections, themes and analytics are part of Premium. Your card keeps working."}
+          </p>
+        </div>
+        <Link href="/dashboard/plan" className={buttonClass(premium && daysLeft > 30 ? "secondary" : "primary")}>
+          {premium && daysLeft > 30 ? "View plan" : "Renew Premium"}
+        </Link>
+      </Card>
+
+      {premium ? (
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <Stat label="Profile views" value={stats.totals.view} hint={`${stats.sources.nfc} from card taps`} />
+          <Stat label="Contacts saved" value={stats.totals.save_contact} />
+          <Stat label="Leads received" value={stats.totals.lead} />
+          <Stat label="Link clicks" value={stats.totals.link_click} />
+        </div>
+      ) : null}
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[1fr_320px]">
+        {premium ? (
         <Card className="p-5">
           <div className="flex items-center justify-between">
             <h2 className="font-medium">Daily views</h2>
@@ -161,6 +186,18 @@ async function Overview() {
             </div>
           ) : null}
         </Card>
+        ) : (
+          <Card className="flex flex-col items-start justify-center p-6">
+            <Icon name="chart" size={22} className="text-ink-400" />
+            <h2 className="mt-3 font-medium">Analytics is part of Premium</h2>
+            <p className="mt-1 max-w-md text-sm text-ink-500">
+              Views, card taps, saved contacts and link clicks are still being counted. Renew to see them again.
+            </p>
+            <Link href="/dashboard/plan" className={buttonClass("primary", "mt-4")}>
+              Renew Premium
+            </Link>
+          </Card>
+        )}
 
         <div className="flex flex-col gap-6">
           <Card className="p-5">

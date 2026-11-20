@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 import { updateOrderStatus } from "@/app/admin/actions";
 import { Button, Input, Select } from "@/components/ui";
 import { ORDER_STATUS_LABEL, ORDER_TRANSITIONS, type OrderStatus } from "@/lib/money";
+import { runAction } from "@/lib/run-action";
 
 export function OrderStatusForm({
   orderId,
@@ -36,12 +37,14 @@ export function OrderStatusForm({
         const form = new FormData(event.currentTarget);
         if (next === "cancelled" && !window.confirm("Cancel this order? Paid orders need a refund in Razorpay.")) return;
         startTransition(async () => {
-          const result = await updateOrderStatus({
-            orderId,
-            status: next,
-            courier: withTracking ? String(form.get("courier") ?? "") : undefined,
-            trackingNumber: withTracking ? String(form.get("trackingNumber") ?? "") : undefined,
-          });
+          const result = await runAction(() =>
+            updateOrderStatus({
+              orderId,
+              status: next,
+              courier: withTracking ? String(form.get("courier") ?? "") : undefined,
+              trackingNumber: withTracking ? String(form.get("trackingNumber") ?? "") : undefined,
+            }),
+          );
           setMessage(result.ok ? (result.message ?? "Saved") : result.error);
           if (result.ok) router.refresh();
         });

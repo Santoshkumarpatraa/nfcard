@@ -7,6 +7,7 @@ import { z } from "zod";
 import { db } from "@/db";
 import { cards, orders, productVariants, user } from "@/db/schema";
 import { markOrderPaid } from "@/data/orders";
+import { extendPremium, refreshPublicProfile, setPremiumPricePaise } from "@/data/premium";
 import { PRODUCTS_TAG } from "@/data/products";
 import type { ActionResult } from "@/app/dashboard/actions";
 import { auth } from "@/lib/auth";
@@ -14,6 +15,7 @@ import { generateCardCode } from "@/lib/card-code";
 import { sendEmail } from "@/lib/email";
 import { ORDER_STATUS_LABEL, ORDER_TRANSITIONS } from "@/lib/money";
 import { absoluteUrl } from "@/lib/site";
+import { ensureProfile } from "@/data/owner";
 
 async function isAdmin() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -101,6 +103,7 @@ export async function updateVariant(input: z.input<typeof variantSchema>): Promi
   const parsed = variantSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Invalid input" };
   const { variantId, priceRupees, compareAtRupees, isActive } = parsed.data;
+  if (compareAtRupees && compareAtRupees <= priceRupees) return { ok: false, error: "MRP must be higher than the price, or 0 for none" };
 
   await db
     .update(productVariants)
@@ -108,4 +111,40 @@ export async function updateVariant(input: z.input<typeof variantSchema>): Promi
     .where(eq(productVariants.id, variantId));
   updateTag(PRODUCTS_TAG);
   return { ok: true, message: "Saved. Shop pages refresh on next visit." };
+}
+
+const priceSchema = z.object({ rupees: z.number().int().min(0).max(100_000) });
+
+export async function updatePremiumPrice(input: z.input<typeof priceSchema>): Promise<ActionResult> {
+  if (!(await isAdmin())) return { ok: false, error: "Not allowed" };
+  const parsed = priceSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Enter a price in rupees, or 0 to turn renewal off" };
+  await setPremiumPricePaise(parsed.data.rupees ? parsed.data.rupees * 100 : null);
+  return { ok: true, message: parsed.data.rupees ? "Renewal price saved" : "Renewal turned off until a price is set" };
+}
+
+const grantSchema = z.object({
+  username: z
+    .string()
+    .transform((value) => value.trim().toLowerCase().replace(/^@/, ""))
+    .pipe(z.string().min(3)),
+  months: z.number().int().min(1).max(36),
+});
+
+export async function grantPremium(input: z.input<typeof grantSchema>): Promise<ActionResult> {
+  if (!(await isAdmin())) return { ok: false, error: "Not allowed" };
+  const parsed = grantSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Enter a username and 1 to 36 months" };
+
+  const [owner] = await db
+    .select({ id: user.id, name: user.name })
+    .from(user)
+    .where(eq(user.username, parsed.data.username))
+    .limit(1);
+  if (!owner) return { ok: false, error: `No customer with username @${parsed.data.username}` };
+
+  const profile = await ensureProfile(owner.id, owner.name);
+  const until = await extendPremium(profile.id, parsed.data.months);
+  refreshPublicProfile(profile.id);
+  return { ok: true, message: `@${parsed.data.username} now has Premium until ${until?.toLocaleDateString("en-IN") ?? "-"}` };
 }

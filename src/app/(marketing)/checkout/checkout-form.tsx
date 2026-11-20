@@ -3,30 +3,11 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useCart } from "@/lib/cart";
+import { type CartItem, useCart } from "@/lib/cart";
 import { formatInr } from "@/lib/money";
+import { loadRazorpay } from "@/lib/razorpay-client";
 import { site } from "@/lib/site";
-
-type RazorpayResponse = { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string };
-
-type RazorpayOptions = {
-  key: string;
-  amount: number;
-  currency: "INR";
-  name: string;
-  description: string;
-  order_id: string;
-  prefill: { name: string; email: string; contact: string };
-  theme: { color: string };
-  handler: (response: RazorpayResponse) => void;
-  modal: { ondismiss: () => void };
-};
-
-declare global {
-  interface Window {
-    Razorpay?: new (options: RazorpayOptions) => { open: () => void };
-  }
-}
+import { uploadDesign } from "@/lib/upload-client";
 
 type CheckoutResponse =
   | { orderId: string; number: number; testMode: true }
@@ -39,16 +20,6 @@ type CheckoutResponse =
       prefill: { name: string; email: string; contact: string };
     };
 
-function loadRazorpay(): Promise<boolean> {
-  if (window.Razorpay) return Promise.resolve(true);
-  return new Promise((resolve) => {
-    const script = document.createElement("script");
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
-    document.body.appendChild(script);
-  });
-}
 
 const STATES = [
   "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa", "Gujarat", "Haryana", "Himachal Pradesh",
@@ -89,6 +60,8 @@ export function CheckoutForm({ defaultName, defaultPhone }: { defaultName: strin
           quantity: item.quantity,
           nameOnCard: item.nameOnCard,
           titleOnCard: item.titleOnCard,
+          logoKey: item.logoKey,
+          notes: item.notes?.trim() || undefined,
         })),
         shipping: {
           name: text("name"),
@@ -161,7 +134,15 @@ export function CheckoutForm({ defaultName, defaultPhone }: { defaultName: strin
 
   return (
     <form onSubmit={onSubmit} className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
-      <div className="grid min-w-0 gap-4 rounded-3xl border border-white/5 bg-ink-900/60 p-5 sm:p-6">
+      <div className="flex min-w-0 flex-col gap-8">
+      <div className="grid gap-4 rounded-3xl border border-white/5 bg-ink-900/60 p-5 sm:p-6">
+        <h2 className="text-lg font-medium text-ink-50">Customise your cards</h2>
+        <p className="-mt-2 text-sm text-ink-400">Add your logo and any design notes. We send a proof before production.</p>
+        {cart.items.map((item) => (
+          <CustomiseItem key={item.id} item={item} onChange={(patch) => cart.update(item.id, patch)} />
+        ))}
+      </div>
+      <div className="grid gap-4 rounded-3xl border border-white/5 bg-ink-900/60 p-5 sm:p-6">
         <h2 className="text-lg font-medium text-ink-50">Delivery address</h2>
         <div className="grid gap-4 sm:grid-cols-2">
           <input name="name" required defaultValue={defaultName} placeholder="Full name" autoComplete="name" className={field} />
@@ -184,6 +165,7 @@ export function CheckoutForm({ defaultName, defaultPhone }: { defaultName: strin
         <input name="gstin" placeholder="GSTIN for business invoice (optional)" maxLength={15} className={`${field} uppercase`} />
       </div>
 
+      </div>
       <aside className="h-fit rounded-3xl border border-white/5 bg-ink-900/60 p-6">
         <h2 className="text-lg font-medium text-ink-50">Summary</h2>
         <ul className="mt-4 flex flex-col gap-3 text-sm">
@@ -211,5 +193,62 @@ export function CheckoutForm({ defaultName, defaultPhone }: { defaultName: strin
         <p className="mt-3 text-center text-xs text-ink-400">UPI, cards and netbanking via Razorpay</p>
       </aside>
     </form>
+  );
+}
+
+function CustomiseItem({ item, onChange }: { item: CartItem; onChange: (patch: Partial<CartItem>) => void }) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function onFile(file: File | undefined) {
+    if (!file) return;
+    setBusy(true);
+    setError(null);
+    try {
+      onChange({ logoKey: await uploadDesign(file), logoName: file.name });
+    } catch (uploadError) {
+      setError(uploadError instanceof Error ? uploadError.message : "Upload failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="grid gap-3 rounded-2xl border border-white/5 p-4">
+      <p className="text-sm text-ink-100">
+        {item.productName}, {item.variantName} <span className="text-ink-400">for {item.nameOnCard}</span>
+      </p>
+      <div className="flex flex-wrap items-center gap-3">
+        <label className="cursor-pointer rounded-full border border-white/15 px-4 py-2 text-sm text-ink-100 hover:border-white/40">
+          {busy ? "Uploading..." : item.logoKey ? "Replace logo" : "Upload logo (optional)"}
+          <input
+            type="file"
+            accept="image/png,image/jpeg,application/pdf"
+            className="hidden"
+            disabled={busy}
+            onChange={(event) => onFile(event.target.files?.[0])}
+          />
+        </label>
+        {item.logoKey ? (
+          <span className="flex min-w-0 items-center gap-2 text-sm text-gold-200">
+            <span className="truncate">{item.logoName ?? "Logo added"}</span>
+            <button type="button" className="text-ink-400 underline" onClick={() => onChange({ logoKey: undefined, logoName: undefined })}>
+              Remove
+            </button>
+          </span>
+        ) : (
+          <span className="text-xs text-ink-400">PNG, JPG or PDF, up to 4 MB. Vector logos as PDF.</span>
+        )}
+      </div>
+      {error ? <p className="text-sm text-red-400">{error}</p> : null}
+      <textarea
+        value={item.notes ?? ""}
+        maxLength={300}
+        rows={2}
+        placeholder="Design notes (optional), e.g. logo on the back, name in capitals"
+        onChange={(event) => onChange({ notes: event.target.value })}
+        className={field}
+      />
+    </div>
   );
 }

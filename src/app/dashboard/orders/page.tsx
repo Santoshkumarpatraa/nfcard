@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { Badge, Card, PageHeader, Skeleton, buttonClass } from "@/components/ui";
 import { getUserOrders } from "@/data/owner";
 import { ORDER_STATUS_LABEL, formatInr } from "@/lib/money";
 import { requireVerifiedUser } from "@/lib/session";
+
+export const metadata: Metadata = { title: "Orders" };
 
 export default function OrdersPage() {
   return (
@@ -52,7 +55,10 @@ async function Orders() {
                     <span>
                       {item.productName} - {item.variantName}
                       <span className="text-ink-500"> x {item.quantity}</span>
-                      <span className="block text-xs text-ink-500">Printed name: {item.customisation.nameOnCard}</span>
+                      <span className="block text-xs text-ink-500">
+                        Name on card: {item.customisation.nameOnCard}
+                        {item.customisation.logoKey ? " · Logo attached" : ""}
+                      </span>
                     </span>
                     <span>{formatInr(item.unitPricePaise * item.quantity)}</span>
                   </li>

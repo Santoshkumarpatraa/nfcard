@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Instrument_Serif } from "next/font/google";
+import { Fraunces, Geist } from "next/font/google";
 import { site } from "@/lib/site";
 import "./globals.css";
 
@@ -9,10 +9,9 @@ const geist = Geist({
 });
 
 // Only the marketing pages use the display face; skipping preload keeps it off profile pages.
-const instrumentSerif = Instrument_Serif({
-  variable: "--font-instrument-serif",
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
   subsets: ["latin"],
-  weight: "400",
   style: ["normal", "italic"],
   preload: false,
 });
@@ -32,7 +31,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en-IN" className={`${geist.variable} ${instrumentSerif.variable} antialiased`}>
+    <html lang="en-IN" className={`${geist.variable} ${fraunces.variable} antialiased`}>
       <body className="min-h-dvh">{children}</body>
     </html>
   );
